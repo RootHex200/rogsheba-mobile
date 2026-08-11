@@ -42,6 +42,8 @@ abstract final class BnStrings {
   static const genericError = 'একটি ত্রুটি ঘটেছে।';
   static const networkError =
       'ইন্টারনেট সংযোগ নেই। সংযোগ ঠিক করে আবার চেষ্টা করুন।';
+  static const timeoutError =
+      'অনুরোধটি সময় শেষ হয়ে গেছে। সংযোগ ঠিক করে আবার চেষ্টা করুন।';
 
   // ---- Triage result card headings ----
   static const levelGreen = 'সবুজ — ঘরে যত্ন';
