@@ -31,18 +31,44 @@ Future<FakeDioAdapter> pumpAppWithTransport(
 }
 
 void main() {
+  testWidgets('tapping an example chip fills the field and enables submit', (
+    tester,
+  ) async {
+    await pumpAppWithTransport(
+      tester,
+      (_) async => FakeDioAdapter.jsonBytes(triageEnvelope),
+    );
+
+    final submitButtonFinder = find.widgetWithText(
+      FilledButton,
+      BnStrings.submit,
+    );
+    expect(tester.widget<FilledButton>(submitButtonFinder).onPressed, isNull);
+
+    final chip = find.text(BnStrings.exampleChestPain);
+    await tester.ensureVisible(chip);
+    await tester.pumpAndSettle();
+    await tester.tap(chip);
+    await tester.pump();
+
+    expect(
+      tester.widget<FilledButton>(submitButtonFinder).onPressed,
+      isNotNull,
+    );
+  });
+
   testWidgets('submit is disabled while the field is empty', (tester) async {
     final adapter = await pumpAppWithTransport(
       tester,
       (_) async => FakeDioAdapter.jsonBytes(triageEnvelope),
     );
 
-    final submitButton = tester.widget<ElevatedButton>(
-      find.widgetWithText(ElevatedButton, BnStrings.submit),
+    final submitButton = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, BnStrings.submit),
     );
     expect(submitButton.onPressed, isNull);
 
-    await tester.tap(find.byType(ElevatedButton));
+    await tester.tap(find.byType(FilledButton));
     await tester.pump();
     expect(adapter.requests, isEmpty);
   });
@@ -59,13 +85,13 @@ void main() {
       await tester.enterText(find.byType(TextField), 'গলা ব্যথা আর জ্বর');
       await tester.pump();
 
-      await tester.tap(find.widgetWithText(ElevatedButton, BnStrings.submit));
+      await tester.tap(find.widgetWithText(FilledButton, BnStrings.submit));
       await tester.pump();
 
       expect(find.text(BnStrings.submitting), findsOneWidget);
 
       // A second submission attempt must be ignored.
-      await tester.tap(find.byType(ElevatedButton));
+      await tester.tap(find.byType(FilledButton));
       await tester.pump();
 
       // Dio reaches the adapter asynchronously; let pending microtasks run.
@@ -94,7 +120,7 @@ void main() {
 
       await tester.enterText(find.byType(TextField), 'গলা ব্যথা আর জ্বর');
       await tester.pump();
-      await tester.tap(find.widgetWithText(ElevatedButton, BnStrings.submit));
+      await tester.tap(find.widgetWithText(FilledButton, BnStrings.submit));
       await tester.pumpAndSettle();
 
       expect(find.text('গলা ব্যথা ও জ্বর'), findsOneWidget);
@@ -118,7 +144,7 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'যা');
     await tester.pump();
-    await tester.tap(find.widgetWithText(ElevatedButton, BnStrings.submit));
+    await tester.tap(find.widgetWithText(FilledButton, BnStrings.submit));
     await tester.pumpAndSettle();
 
     expect(find.text('Invalid request body.'), findsOneWidget);

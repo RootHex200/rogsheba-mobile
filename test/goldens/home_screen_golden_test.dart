@@ -1,0 +1,40 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:rogsheba_mobile/core/theme/app_theme.dart';
+import 'package:rogsheba_mobile/features/triage/presentation/home_screen.dart';
+
+import '../helpers/bundled_fonts.dart';
+
+void main() {
+  Future<void> pumpHome(WidgetTester tester, Brightness brightness) async {
+    await tester.binding.setSurfaceSize(const Size(414, 1900));
+    await loadBundledFonts(tester);
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          theme: buildAppTheme(brightness),
+          debugShowCheckedModeBanner: false,
+          home: const HomeScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('home screen — light theme', (tester) async {
+    await pumpHome(tester, Brightness.light);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('home_light.png'),
+    );
+  });
+
+  testWidgets('home screen — dark theme', (tester) async {
+    await pumpHome(tester, Brightness.dark);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('home_dark.png'),
+    );
+  });
+}
