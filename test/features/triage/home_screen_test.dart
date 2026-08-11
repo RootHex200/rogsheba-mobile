@@ -31,6 +31,19 @@ Future<FakeDioAdapter> pumpAppWithTransport(
 }
 
 void main() {
+  testWidgets('app bar shows the RogSheba lockup and the ৯৯৯ hotline pill', (
+    tester,
+  ) async {
+    await pumpAppWithTransport(
+      tester,
+      (_) async => FakeDioAdapter.jsonBytes(triageEnvelope),
+    );
+
+    expect(find.text('${BnStrings.appBrand} ${BnStrings.appTitle}'), findsOne);
+    expect(find.text(BnStrings.hotline999), findsOneWidget);
+    expect(find.text(BnStrings.heroBadge), findsOneWidget);
+  });
+
   testWidgets('tapping an example chip fills the field and enables submit', (
     tester,
   ) async {
@@ -90,6 +103,10 @@ void main() {
 
       expect(find.text(BnStrings.submitting), findsOneWidget);
 
+      // Both the example chips and the feature strip hide while in-flight.
+      expect(find.text(BnStrings.exampleHeader), findsNothing);
+      expect(find.text(BnStrings.featureTriageTitle), findsNothing);
+
       // A second submission attempt must be ignored.
       await tester.tap(find.byType(FilledButton));
       await tester.pump();
@@ -130,6 +147,11 @@ void main() {
         find.text('এটি একজন ডাক্তারের পরামর্শের বিকল্প নয়।'),
         findsOneWidget,
       );
+
+      // Once a result is shown, the on-boarding aids (chips + feature strip)
+      // are hidden — nothing to distract from the outcome.
+      expect(find.text(BnStrings.exampleHeader), findsNothing);
+      expect(find.text(BnStrings.featureTriageTitle), findsNothing);
     },
   );
 
@@ -149,6 +171,42 @@ void main() {
 
     expect(find.text('Invalid request body.'), findsOneWidget);
     expect(find.text('গলা ব্যথা ও জ্বর'), findsNothing);
+  });
+
+  testWidgets('submitting scrolls the freshly produced result into view', (
+    tester,
+  ) async {
+    // Narrow the viewport so the result card starts below the fold, forcing
+    // the auto-scroll to do real work.
+    tester.view.physicalSize = const Size(500, 600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await pumpAppWithTransport(
+      tester,
+      (_) async => FakeDioAdapter.jsonBytes(triageEnvelope),
+    );
+
+    final resultTitle = find.text('গলা ব্যথা ও জ্বর');
+    // Assert no result exists yet (and by extension is below the fold).
+    expect(resultTitle, findsNothing);
+
+    await tester.enterText(find.byType(TextField), 'গলা ব্যথা আর জ্বর');
+    await tester.pump();
+
+    final submitButton = find.widgetWithText(FilledButton, BnStrings.submit);
+    await tester.ensureVisible(submitButton);
+    await tester.pumpAndSettle();
+    await tester.tap(submitButton);
+    await tester.pumpAndSettle();
+
+    expect(resultTitle, findsOneWidget);
+    final titleRect = tester.getRect(resultTitle);
+    expect(titleRect.top, greaterThan(0));
+    expect(titleRect.bottom, lessThan(tester.view.physicalSize.height));
   });
 
   testWidgets('a failing request renders the Bangla error banner verbatim', (

@@ -6,7 +6,14 @@
 abstract final class BnStrings {
   static const appTitle = 'রোগসেবা';
 
+  /// Latin brand word, rendered in the display font next to the Bangla title.
+  static const appBrand = 'RogSheba';
+
+  /// Emergency number pill in the app bar (web header `[৯৯৯](tel:999)`).
+  static const hotline999 = '৯৯৯';
+
   // ---- Home hero ----
+  static const heroBadge = 'AI ট্রায়াজ • বাংলা ভয়েস • বিনামূল্যে';
   static const heroTitle = 'আপনার লক্ষণ বলুন — তাৎক্ষণিক স্বাস্থ্য পরামর্শ পান';
   static const heroSubtitle =
       'বাংলায় কথা বলে বা লিখে জানান কী হচ্ছে। RogSheba বলে দেবে — '
