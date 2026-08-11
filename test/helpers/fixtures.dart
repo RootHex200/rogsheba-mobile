@@ -30,3 +30,29 @@ const Map<String, dynamic> validationErrorEnvelope = {
     ],
   },
 };
+
+/// Bangla `error.message`, exactly as the API returns it. Must reach the UI
+/// unmodified.
+const Map<String, dynamic> banglaErrorEnvelope = {
+  'success': false,
+  'error': {
+    'code': 'validation_failed',
+    'message': 'অন্তত ৩টি অক্ষর লিখুন।',
+  },
+};
+
+const Map<String, dynamic> rateLimitedEnvelope = {
+  'success': false,
+  'error': {
+    'code': 'rate_limited',
+    'message': 'অনেকগুলো অনুরোধ আসছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।',
+  },
+};
+
+const Map<String, dynamic> internalErrorEnvelope = {
+  'success': false,
+  'error': {
+    'code': 'internal_error',
+    'message': 'সার্ভিসে সাময়িক সমস্যা হয়েছে।',
+  },
+};

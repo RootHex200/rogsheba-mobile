@@ -150,4 +150,21 @@ void main() {
     expect(find.text('Invalid request body.'), findsOneWidget);
     expect(find.text('গলা ব্যথা ও জ্বর'), findsNothing);
   });
+
+  testWidgets('a failing request renders the Bangla error banner verbatim', (
+    tester,
+  ) async {
+    await pumpAppWithTransport(
+      tester,
+      (_) async => FakeDioAdapter.jsonBytes(banglaErrorEnvelope, status: 422),
+    );
+
+    await tester.enterText(find.byType(TextField), 'জ্বর');
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, BnStrings.submit));
+    await tester.pumpAndSettle();
+
+    expect(find.text('অন্তত ৩টি অক্ষর লিখুন।'), findsOneWidget);
+    expect(find.text('গলা ব্যথা ও জ্বর'), findsNothing);
+  });
 }
