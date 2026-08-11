@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:rogsheba_mobile/core/l10n/bn_strings.dart';
+import 'package:rogsheba_mobile/core/theme/app_theme.dart';
+import 'package:rogsheba_mobile/core/theme/app_theme_tokens.dart';
+import 'package:rogsheba_mobile/features/triage/domain/triage_level.dart';
 import 'package:rogsheba_mobile/features/triage/domain/triage_result.dart';
 import 'package:rogsheba_mobile/features/triage/presentation/triage_controller.dart';
+import 'package:rogsheba_mobile/shared/widgets/app_button.dart';
+import 'package:rogsheba_mobile/shared/widgets/app_card.dart';
+import 'package:rogsheba_mobile/shared/widgets/app_chip.dart';
 
-/// Walking-skeleton home screen: type Bangla symptoms, tap পরামর্শ নিন, see the
-/// live triage result rendered as plain text. Deliberately unpolished — the
-/// design system, voice and card layout land in later issues.
+/// The home / triage screen, porting the web layout: hero, symptom entry card,
+/// example chips, feature strip and the triage result card. All colours and
+/// geometry resolve through the theme — no hardcoded tokens in feature code.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -15,63 +21,77 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(triageControllerProvider);
     final controller = ref.read(triageControllerProvider.notifier);
-
-    final Widget submitChild;
-    if (state.isSubmitting) {
-      submitChild = const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          SizedBox(width: 8),
-          Text(BnStrings.submitting),
-        ],
-      );
-    } else {
-      submitChild = const Text(BnStrings.submit);
-    }
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text(BnStrings.appTitle)),
+      appBar: AppBar(
+        title: const Text(
+          BnStrings.appTitle,
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                onChanged: controller.onSymptomsChanged,
-                onSubmitted: (_) => controller.submit(),
-                keyboardType: TextInputType.multiline,
-                maxLines: null,
-                minLines: 3,
-                textInputAction: TextInputAction.newline,
-                decoration: const InputDecoration(
-                  labelText: BnStrings.symptomLabel,
-                  hintText: BnStrings.symptomHint,
-                  helperText: BnStrings.symptomsHelp,
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: state.canSubmit ? controller.submit : null,
-                child: submitChild,
-              ),
-              const SizedBox(height: 16),
-              if (state.errorMessage != null)
-                Text(
-                  state.errorMessage!,
-                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                    color: Theme.of(context).colorScheme.error,
+          padding: const EdgeInsets.all(20),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 768),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _Hero(),
+                  const SizedBox(height: 24),
+                  AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextField(
+                          onChanged: controller.onSymptomsChanged,
+                          onSubmitted: (_) => controller.submit(),
+                          keyboardType: TextInputType.multiline,
+                          maxLines: null,
+                          minLines: 5,
+                          textInputAction: TextInputAction.newline,
+                          decoration: const InputDecoration(
+                            hintText: BnStrings.symptomPlaceholder,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        AppButton(
+                          label: state.isSubmitting
+                              ? BnStrings.submitting
+                              : BnStrings.submit,
+                          isLoading: state.isSubmitting,
+                          onPressed: state.canSubmit ? controller.submit : null,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          BnStrings.inlineDisclaimer,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: scheme.onSurfaceVariant),
+                        ),
+                        if (state.errorMessage != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            state.errorMessage!,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: scheme.error),
+                          ),
+                        ],
+                        if (state.result == null && !state.isSubmitting)
+                          const _ExampleChips(),
+                      ],
+                    ),
                   ),
-                ),
-              if (state.result != null) TriageResultView(result: state.result!),
-            ],
+                  const SizedBox(height: 32),
+                  const _FeatureStrip(),
+                  if (state.result != null) ...[
+                    const SizedBox(height: 24),
+                    TriageResultCard(result: state.result!),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -79,53 +99,266 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class TriageResultView extends StatelessWidget {
-  const TriageResultView({required this.result, super.key});
+class _Hero extends StatelessWidget {
+  const _Hero();
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    final title = TextSpan(
+      children: [
+        const TextSpan(text: 'আপনার লক্ষণ বলুন — '),
+        TextSpan(
+          text: 'তাৎক্ষণিক স্বাস্থ্য পরামর্শ',
+          style: TextStyle(color: scheme.primary),
+        ),
+        const TextSpan(text: ' পান'),
+      ],
+    );
+    return Column(
+      children: [
+        Text.rich(
+          title,
+          textAlign: TextAlign.center,
+          style: textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            height: 1.2,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          BnStrings.heroSubtitle,
+          textAlign: TextAlign.center,
+          style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+      ],
+    );
+  }
+}
+
+class _ExampleChips extends ConsumerWidget {
+  const _ExampleChips();
+
+  static const _examples = [
+    BnStrings.exampleFeverThroat,
+    BnStrings.exampleChestPain,
+    BnStrings.exampleStomach,
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(triageControllerProvider.notifier);
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            BnStrings.exampleHeader,
+            style: Theme.of(
+              context,
+            ).textTheme.labelSmall?.copyWith(letterSpacing: 0.8),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final example in _examples)
+                AppChip(
+                  label: example,
+                  onTap: () => controller.onSymptomsChanged(example),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeatureStrip extends StatelessWidget {
+  const _FeatureStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        _FeatureItem(
+          icon: Icons.health_and_safety_outlined,
+          title: BnStrings.featureTriageTitle,
+          body: BnStrings.featureTriageBody,
+        ),
+        _FeatureItem(
+          icon: Icons.local_hospital_outlined,
+          title: BnStrings.featureClinicsTitle,
+          body: BnStrings.featureClinicsBody,
+        ),
+        _FeatureItem(
+          icon: Icons.lock_outline,
+          title: BnStrings.featurePrivateTitle,
+          body: BnStrings.featurePrivateBody,
+        ),
+      ],
+    );
+  }
+}
+
+class _FeatureItem extends StatelessWidget {
+  const _FeatureItem({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: scheme.primary, size: 28),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  body,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Styled triage result card. The full level-specific blocks (RED emergency
+/// band, TTS, clinics CTA) land with the triage-levels slice; this establishes
+/// the card chrome and the theme-resolved level colouring.
+class TriageResultCard extends StatelessWidget {
+  const TriageResultCard({required this.result, super.key});
 
   final TriageResult result;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.only(top: 24),
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _LevelBadge(level: result.level),
+          const SizedBox(height: 12),
           Text(
             result.titleBn,
-            style: textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
+            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(result.summaryBn, style: textTheme.bodyLarge),
-          const SizedBox(height: 12),
-          Text(
-            '${BnStrings.adviceTitle}:',
-            style: textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold),
-          ),
-          for (final (index, step) in result.adviceBn.indexed)
-            Text('${index + 1}. $step', style: textTheme.bodyMedium),
+          if (result.adviceBn.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const _SectionHeading(BnStrings.adviceTitle),
+            for (final (index, step) in result.adviceBn.indexed)
+              Text('${index + 1}. $step', style: textTheme.bodyMedium),
+          ],
           if (result.warningSignsBn.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(
-              '${BnStrings.warningSignsTitle}:',
-              style: textTheme.titleMedium!.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            const _SectionHeading(BnStrings.warningSignsTitle),
             for (final sign in result.warningSignsBn)
               Text('• $sign', style: textTheme.bodyMedium),
           ],
           if (result.followupQuestionBn != null) ...[
             const SizedBox(height: 12),
             Text(
-              '${BnStrings.followupTitle}: ${result.followupQuestionBn}',
+              '${BnStrings.followupPrefix}${result.followupQuestionBn}',
               style: textTheme.bodyMedium,
             ),
           ],
           const SizedBox(height: 12),
-          Text(result.disclaimerBn, style: textTheme.bodySmall),
+          Text(
+            result.disclaimerBn,
+            style: textTheme.bodySmall?.copyWith(
+              fontStyle: FontStyle.italic,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(
+        title.toUpperCase(),
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+}
+
+class _LevelBadge extends StatelessWidget {
+  const _LevelBadge({required this.level});
+
+  final TriageLevel level;
+
+  @override
+  Widget build(BuildContext context) {
+    final triage = triageColorsOf(context);
+    final background = triage.backgroundFor(level, isForeground: false);
+    final foreground = triage.backgroundFor(level, isForeground: true);
+    final label = switch (level) {
+      TriageLevel.green => BnStrings.levelGreen,
+      TriageLevel.yellow => BnStrings.levelYellow,
+      TriageLevel.red => BnStrings.levelRed,
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppRadius.xxxl),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: foreground,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
