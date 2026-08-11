@@ -1,0 +1,7 @@
+include: package:very_good_analysis/analysis_options.6.0.0.yaml
+
+linter:
+  rules:
+    # This is an app, not a published package; documenting every public member
+    # adds noise without a consumer to benefit from it.
+    public_member_api_docs: false
