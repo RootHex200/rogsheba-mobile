@@ -14,21 +14,42 @@ import 'package:rogsheba_mobile/shared/widgets/app_chip.dart';
 /// The home / triage screen, porting the web layout: hero, symptom entry card,
 /// example chips, feature strip and the triage result card. All colours and
 /// geometry resolve through the theme — no hardcoded tokens in feature code.
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  /// Attached to the result card so a freshly produced result can be scrolled
+  /// into view (issue #6 acceptance: "submit scrolls the result into view").
+  final GlobalKey _resultKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(triageControllerProvider);
     final controller = ref.read(triageControllerProvider.notifier);
     final scheme = Theme.of(context).colorScheme;
 
+    _scrollResultIntoViewOnSubmit();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          BnStrings.appTitle,
+        title: const Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: BnStrings.appBrand,
+                style: TextStyle(fontFamily: AppFonts.display),
+              ),
+              TextSpan(text: ' '),
+              TextSpan(text: BnStrings.appTitle),
+            ],
+          ),
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: const [_HotlinePill()],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -83,11 +104,16 @@ class HomeScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
-                  const _FeatureStrip(),
+                  if (state.result == null && !state.isSubmitting) ...[
+                    const SizedBox(height: 32),
+                    const _FeatureStrip(),
+                  ],
                   if (state.result != null) ...[
                     const SizedBox(height: 24),
-                    TriageResultCard(result: state.result!),
+                    KeyedSubtree(
+                      key: _resultKey,
+                      child: TriageResultCard(result: state.result!),
+                    ),
                   ],
                 ],
               ),
@@ -96,6 +122,26 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// Once a fresh result lands, scrolls the result card into view so the
+  /// outcome is immediately visible without manual scrolling.
+  void _scrollResultIntoViewOnSubmit() {
+    ref.listen<TriageFormState>(triageControllerProvider, (previous, next) {
+      if (previous?.result == null && next.result != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final resultContext = _resultKey.currentContext;
+          if (resultContext != null && resultContext.mounted) {
+            Scrollable.ensureVisible(
+              resultContext,
+              alignment: 0.3,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutCubic,
+            );
+          }
+        });
+      }
+    });
   }
 }
 
@@ -118,6 +164,22 @@ class _Hero extends StatelessWidget {
     );
     return Column(
       children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: scheme.secondary.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(AppRadius.xxxl),
+          ),
+          child: Text(
+            BnStrings.heroBadge,
+            textAlign: TextAlign.center,
+            style: textTheme.labelMedium?.copyWith(
+              color: scheme.secondary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         Text.rich(
           title,
           textAlign: TextAlign.center,
@@ -133,6 +195,36 @@ class _Hero extends StatelessWidget {
           style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
         ),
       ],
+    );
+  }
+}
+
+/// The web header's red emergency pill (`৯৯৯` -> `tel:999`). It is informative
+/// chrome here; the actual tap-to-dial flow ships with the emergency CTA slice.
+class _HotlinePill extends StatelessWidget {
+  const _HotlinePill();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(right: 16),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: scheme.error,
+            borderRadius: BorderRadius.circular(AppRadius.xxxl),
+          ),
+          child: Text(
+            BnStrings.hotline999,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: scheme.onError,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
