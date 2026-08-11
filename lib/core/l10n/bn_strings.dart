@@ -51,13 +51,19 @@ abstract final class BnStrings {
   static const levelRed = 'লাল — এখনই হাসপাতালে যান';
   static const levelRedSub = 'জরুরি — দেরি করবেন না';
 
+  static const redEmergencyTitle =
+      '⚠️ এখনই হাসপাতালে যান বা জরুরি সেবায় কল করুন';
+
   static const adviceTitle = 'করণীয়';
   static const warningSignsTitle = 'বিপদ-সংকেত — দেখলে দ্রুত হাসপাতালে যান';
   static const followupPrefix = 'ফলো-আপ: ';
   static const ttsListen = 'বাংলায় শুনুন';
   static const ttsStop = 'শোনা বন্ধ';
-  static const redBanner = 'এখনই হাসপাতালে যান বা জরুরি সেবায় কল করুন';
   static const call999 = '৯৯৯ কল';
   static const call16263 = '১৬২৬৩';
   static const nearbyClinicsCta = 'নিকটস্থ ক্লিনিক খুঁজুন';
+  static const disclaimerPrefix = 'ⓘ ';
+
+  // ---- Clinics ----
+  static const clinicsAppBarTitle = 'নিকটস্থ ক্লিনিক';
 }

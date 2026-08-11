@@ -21,6 +21,10 @@ ThemeData buildAppTheme(Brightness brightness) {
     onSecondary: isDark
         ? AppColors.darkSecondaryForeground
         : AppColors.lightSecondaryForeground,
+    tertiary: isDark ? AppColors.darkAccent : AppColors.lightAccent,
+    onTertiary: isDark
+        ? AppColors.darkAccentForeground
+        : AppColors.lightAccentForeground,
     surface: isDark ? AppColors.darkSurface : AppColors.lightSurface,
     onSurface: isDark ? AppColors.darkForeground : AppColors.lightForeground,
     surfaceContainer: isDark ? AppColors.darkSurface : AppColors.lightSurface,

@@ -2,17 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:rogsheba_mobile/core/l10n/bn_strings.dart';
-import 'package:rogsheba_mobile/core/theme/app_theme.dart';
-import 'package:rogsheba_mobile/core/theme/app_theme_tokens.dart';
-import 'package:rogsheba_mobile/features/triage/domain/triage_level.dart';
-import 'package:rogsheba_mobile/features/triage/domain/triage_result.dart';
 import 'package:rogsheba_mobile/features/triage/presentation/triage_controller.dart';
+import 'package:rogsheba_mobile/features/triage/presentation/triage_result_card.dart';
 import 'package:rogsheba_mobile/shared/widgets/app_button.dart';
 import 'package:rogsheba_mobile/shared/widgets/app_card.dart';
 import 'package:rogsheba_mobile/shared/widgets/app_chip.dart';
 
 /// The home / triage screen, porting the web layout: hero, symptom entry card,
-/// example chips, feature strip and the triage result card. All colours and
+/// example chips, feature strip and the [TriageResultCard]. All colours and
 /// geometry resolve through the theme — no hardcoded tokens in feature code.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -249,116 +246,6 @@ class _FeatureItem extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Styled triage result card. The full level-specific blocks (RED emergency
-/// band, TTS, clinics CTA) land with the triage-levels slice; this establishes
-/// the card chrome and the theme-resolved level colouring.
-class TriageResultCard extends StatelessWidget {
-  const TriageResultCard({required this.result, super.key});
-
-  final TriageResult result;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _LevelBadge(level: result.level),
-          const SizedBox(height: 12),
-          Text(
-            result.titleBn,
-            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(result.summaryBn, style: textTheme.bodyLarge),
-          if (result.adviceBn.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            const _SectionHeading(BnStrings.adviceTitle),
-            for (final (index, step) in result.adviceBn.indexed)
-              Text('${index + 1}. $step', style: textTheme.bodyMedium),
-          ],
-          if (result.warningSignsBn.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            const _SectionHeading(BnStrings.warningSignsTitle),
-            for (final sign in result.warningSignsBn)
-              Text('• $sign', style: textTheme.bodyMedium),
-          ],
-          if (result.followupQuestionBn != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              '${BnStrings.followupPrefix}${result.followupQuestionBn}',
-              style: textTheme.bodyMedium,
-            ),
-          ],
-          const SizedBox(height: 12),
-          Text(
-            result.disclaimerBn,
-            style: textTheme.bodySmall?.copyWith(
-              fontStyle: FontStyle.italic,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionHeading extends StatelessWidget {
-  const _SectionHeading(this.title);
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Text(
-        title.toUpperCase(),
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.8,
-        ),
-      ),
-    );
-  }
-}
-
-class _LevelBadge extends StatelessWidget {
-  const _LevelBadge({required this.level});
-
-  final TriageLevel level;
-
-  @override
-  Widget build(BuildContext context) {
-    final triage = triageColorsOf(context);
-    final background = triage.backgroundFor(level, isForeground: false);
-    final foreground = triage.backgroundFor(level, isForeground: true);
-    final label = switch (level) {
-      TriageLevel.green => BnStrings.levelGreen,
-      TriageLevel.yellow => BnStrings.levelYellow,
-      TriageLevel.red => BnStrings.levelRed,
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppRadius.xxxl),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: foreground,
-          fontWeight: FontWeight.bold,
-        ),
       ),
     );
   }
