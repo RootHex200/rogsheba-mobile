@@ -81,4 +81,20 @@ abstract final class BnStrings {
   static const call999 = '৯৯৯ কল';
   static const call16263 = '১৬২৬৩';
   static const nearbyClinicsCta = 'নিকটস্থ ক্লিনিক খুঁজুন';
+
+  // ---- Clinics ----
+  static const clinicsTitle = 'নিকটস্থ হাসপাতাল ও ক্লিনিক';
+  static const clinicsSubtitle =
+      'OpenStreetMap থেকে রিয়েল-টাইম ডেটা — সম্পূর্ণ বিনামূল্যে।';
+  static const locating = 'আপনার অবস্থান খুঁজছি…';
+  static const clinicsLoading = 'নিকটস্থ ক্লিনিক লোড হচ্ছে…';
+  static const directions = 'দিকনির্দেশ';
+  static const viewOnMap = 'ম্যাপে দেখুন';
+  static const retry = 'আবার চেষ্টা করুন';
+
+  // Bare failure states for slice #8; #9 replaces them with the Dhaka
+  // fallback list plus the warning banner (matching the web).
+  static const locationDenied = 'লোকেশন অনুমতি দেওয়া হয়নি।';
+  static const locationDisabled = 'লোকেশন সেবা বন্ধ আছে।';
+  static const locationFailed = 'লোকেশন পাওয়া যায়নি।';
 }

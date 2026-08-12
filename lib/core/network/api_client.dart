@@ -46,6 +46,30 @@ class ApiClient {
     }
   }
 
+  /// `GET` with optional query parameters. `/clinics` uses the default 10s
+  /// timeout — it is not a slow-upstream endpoint like `/triage`.
+  Future<Map<String, dynamic>> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Duration? timeout,
+  }) async {
+    final effectiveTimeout = timeout ?? _config.defaultTimeout;
+    try {
+      final response = await _dio.get<Uint8List>(
+        path,
+        queryParameters: queryParameters,
+        options: Options(
+          responseType: ResponseType.bytes,
+          receiveTimeout: effectiveTimeout,
+          sendTimeout: effectiveTimeout,
+        ),
+      );
+      return _decode(response.data, effectiveTimeout);
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    }
+  }
+
   Map<String, dynamic> _decode(Uint8List? bytes, Duration timeout) {
     if (bytes == null) {
       throw const ApiException('empty_response', BnStrings.networkError);
