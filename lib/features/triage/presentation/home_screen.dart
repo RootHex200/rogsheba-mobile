@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:rogsheba_mobile/core/l10n/bn_strings.dart';
+import 'package:rogsheba_mobile/core/services/tts_service.dart';
 import 'package:rogsheba_mobile/core/theme/app_theme.dart';
 import 'package:rogsheba_mobile/core/theme/app_theme_tokens.dart';
 import 'package:rogsheba_mobile/features/triage/domain/triage_level.dart';
 import 'package:rogsheba_mobile/features/triage/domain/triage_result.dart';
 import 'package:rogsheba_mobile/features/triage/presentation/triage_controller.dart';
+import 'package:rogsheba_mobile/features/triage/presentation/tts_script.dart';
 import 'package:rogsheba_mobile/shared/widgets/app_button.dart';
 import 'package:rogsheba_mobile/shared/widgets/app_card.dart';
 import 'package:rogsheba_mobile/shared/widgets/app_chip.dart';
@@ -361,7 +363,14 @@ class TriageResultCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _LevelBadge(level: result.level),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Flexible(child: _LevelBadge(level: result.level)),
+              const SizedBox(width: 8),
+              _SpeakButton(result: result),
+            ],
+          ),
           const SizedBox(height: 12),
           Text(
             result.titleBn,
@@ -398,6 +407,75 @@ class TriageResultCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Speaker toggle on the result card header: reads the result aloud in Bangla,
+/// or stops playback when already speaking. As on the web, the button is hidden
+/// entirely when no `bn-BD` voice is installed — Bangla read with an English
+/// voice is worse than no audio.
+class _SpeakButton extends ConsumerStatefulWidget {
+  const _SpeakButton({required this.result});
+
+  final TriageResult result;
+
+  @override
+  ConsumerState<_SpeakButton> createState() => _SpeakButtonState();
+}
+
+class _SpeakButtonState extends ConsumerState<_SpeakButton> {
+  /// `null` while the capability check is in flight, `false` when no `bn-BD`
+  /// voice exists. Only `true` renders the button.
+  bool? _voiceAvailable;
+  bool _isSpeaking = false;
+
+  /// Captured in [initState]; must not be read through `ref` in [dispose],
+  /// which Riverpod forbids.
+  late final TtsService _tts;
+
+  @override
+  void initState() {
+    super.initState();
+    _tts = ref.read(ttsServiceProvider);
+    _checkVoiceAvailable();
+  }
+
+  Future<void> _checkVoiceAvailable() async {
+    final available = await _tts.supportsBanglaVoice();
+    if (mounted) setState(() => _voiceAvailable = available);
+  }
+
+  Future<void> _toggle() async {
+    if (_isSpeaking) {
+      await _tts.stop();
+      if (mounted) setState(() => _isSpeaking = false);
+    } else {
+      setState(() => _isSpeaking = true);
+      await _tts.speak(buildSpeechText(widget.result));
+      if (mounted) setState(() => _isSpeaking = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    // Audio must never outlive the card: stop on dispose and navigation.
+    _tts.stop();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_voiceAvailable != true) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return TextButton.icon(
+      onPressed: _toggle,
+      icon: Icon(
+        _isSpeaking ? Icons.stop : Icons.volume_up,
+        size: 20,
+      ),
+      label: Text(_isSpeaking ? BnStrings.ttsStop : BnStrings.ttsListen),
+      style: TextButton.styleFrom(foregroundColor: scheme.primary),
     );
   }
 }
