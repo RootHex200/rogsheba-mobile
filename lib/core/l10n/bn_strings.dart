@@ -65,6 +65,10 @@ abstract final class BnStrings {
   static const followupPrefix = 'ফলো-আপ: ';
   static const ttsListen = 'বাংলায় শুনুন';
   static const ttsStop = 'শোনা বন্ধ';
+
+  // Spoken-text prefixes, read aloud in the web's order.
+  static const ttsAdvicePrefix = 'করণীয়: ';
+  static const ttsWarningSignsPrefix = 'বিপদ-সংকেত: ';
   static const redBanner = 'এখনই হাসপাতালে যান বা জরুরি সেবায় কল করুন';
   static const call999 = '৯৯৯ কল';
   static const call16263 = '১৬২৬৩';

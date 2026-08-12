@@ -7,22 +7,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rogsheba_mobile/app.dart';
 import 'package:rogsheba_mobile/core/l10n/bn_strings.dart';
 import 'package:rogsheba_mobile/core/network/network_providers.dart';
+import 'package:rogsheba_mobile/core/services/tts_service.dart';
 
 import '../../helpers/fake_dio_adapter.dart';
+import '../../helpers/fake_tts_service.dart';
 import '../../helpers/fixtures.dart';
 
-/// Pumps the real application widget with exactly one override: the HTTP
-/// transport at the Dio adapter level. Everything above it — UTF-8 handling,
-/// envelope decoding, error mapping, the repository and the screen — is real.
+/// Pumps the real application widget with two overrides: the HTTP transport at
+/// the Dio adapter level and the TTS engine (whose platform channels cannot run
+/// in a widget test). Everything above them — UTF-8 handling, envelope
+/// decoding, error mapping, the repository, the screen and the speaker button —
+/// is real.
 Future<FakeDioAdapter> pumpAppWithTransport(
   WidgetTester tester,
   Future<ResponseBody> Function(RequestOptions) handler,
 ) async {
   final adapter = FakeDioAdapter(handler);
+  final tts = FakeTtsService();
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         dioProvider.overrideWith((ref) => Dio()..httpClientAdapter = adapter),
+        ttsServiceProvider.overrideWithValue(tts),
       ],
       child: const RogShebaApp(),
     ),
