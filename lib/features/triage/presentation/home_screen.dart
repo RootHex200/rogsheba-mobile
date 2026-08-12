@@ -9,6 +9,7 @@ import 'package:rogsheba_mobile/core/services/speech_service.dart';
 import 'package:rogsheba_mobile/core/services/tts_service.dart';
 import 'package:rogsheba_mobile/core/theme/app_theme.dart';
 import 'package:rogsheba_mobile/core/theme/app_theme_tokens.dart';
+import 'package:rogsheba_mobile/features/emergency/presentation/hotline_pill.dart';
 import 'package:rogsheba_mobile/features/triage/domain/triage_level.dart';
 import 'package:rogsheba_mobile/features/triage/domain/triage_result.dart';
 import 'package:rogsheba_mobile/features/triage/presentation/triage_controller.dart';
@@ -55,7 +56,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: const [_HotlinePill()],
+        actions: const [HotlinePill()],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -194,36 +195,6 @@ class _Hero extends StatelessWidget {
           style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
         ),
       ],
-    );
-  }
-}
-
-/// The web header's red emergency pill (`৯৯৯` -> `tel:999`). It is informative
-/// chrome here; the actual tap-to-dial flow ships with the emergency CTA slice.
-class _HotlinePill extends StatelessWidget {
-  const _HotlinePill();
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(right: 16),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: scheme.error,
-            borderRadius: BorderRadius.circular(AppRadius.xxxl),
-          ),
-          child: Text(
-            BnStrings.hotline999,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: scheme.onError,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

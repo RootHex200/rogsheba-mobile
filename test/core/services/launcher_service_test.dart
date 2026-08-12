@@ -91,4 +91,27 @@ void main() {
       );
     });
   });
+
+  group('TelUrls.dial', () {
+    test('emits the canonical tel: scheme for the 999 hotline', () {
+      // Issue #10 acceptance: "Tapping ৯৯৯ calls tel:999". The URL builder
+      // is Arabic-format-only — Bengali-numerals conversion is the widget's
+      // job, so this URL is exactly what the OS dialer receives.
+      expect(TelUrls.dial('999').toString(), 'tel:999');
+    });
+
+    test('preserves multi-digit numbers as-is', () {
+      expect(TelUrls.dial('16263').toString(), 'tel:16263');
+    });
+
+    test('does not add an origin or any other query parameters', () {
+      // Regression guard: any extra data on a `tel:` URI is invalid and the
+      // dialer ignores it. The builder must produce exactly `tel:<digits>`.
+      final uri = TelUrls.dial('999');
+      expect(uri.scheme, 'tel');
+      expect(uri.path, '999');
+      expect(uri.hasQuery, isFalse);
+      expect(uri.queryParameters, isEmpty);
+    });
+  });
 }
