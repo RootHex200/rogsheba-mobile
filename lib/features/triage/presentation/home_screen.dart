@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:rogsheba_mobile/core/l10n/bn_strings.dart';
 import 'package:rogsheba_mobile/core/services/speech_service.dart';
@@ -645,6 +646,7 @@ class TriageResultCard extends StatelessWidget {
               style: textTheme.bodyMedium,
             ),
           ],
+          const _ClinicsCtaButton(),
           const SizedBox(height: 12),
           Text(
             result.disclaimerBn,
@@ -776,6 +778,50 @@ class _LevelBadge extends StatelessWidget {
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
           color: foreground,
           fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}
+
+/// The web's clinics CTA under every result: primary pill that routes to the
+/// `/clinics` screen via go_router (web `to=/clinics`), shown for every level.
+class _ClinicsCtaButton extends StatelessWidget {
+  const _ClinicsCtaButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Material(
+          color: scheme.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.xxxl),
+          ),
+          child: InkWell(
+            onTap: () => context.go('/clinics'),
+            borderRadius: BorderRadius.circular(AppRadius.xxxl),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.location_on, color: scheme.onPrimary, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    BnStrings.nearbyClinicsCta,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: scheme.onPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
