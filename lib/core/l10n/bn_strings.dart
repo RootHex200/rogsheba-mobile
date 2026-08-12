@@ -30,6 +30,14 @@ abstract final class BnStrings {
   static const submitting = 'বিশ্লেষণ চলছে';
   static const inlineDisclaimer = 'এটি ডাক্তারের পরামর্শের বিকল্প নয়।';
 
+  // ---- Voice input ----
+  /// Live indicator shown while the mic is active (web's "শুনছি…").
+  static const listeningIndicator = 'শুনছি…';
+  static const stopListening = 'শোনা বন্ধ করুন';
+  static const voiceUnavailable =
+      'ভয়েস সাপোর্ট নেই — টাইপ করুন';
+  static const micLabel = 'বাংলায় বলুন';
+
   // ---- Examples ----
   static const exampleHeader = 'উদাহরণ';
   static const exampleFeverThroat = '৩ দিন ধরে জ্বর ১০২ ও গলা ব্যথা';
