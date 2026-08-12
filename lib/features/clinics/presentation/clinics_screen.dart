@@ -6,6 +6,7 @@ import 'package:rogsheba_mobile/core/services/launcher_service.dart';
 import 'package:rogsheba_mobile/core/theme/app_theme_tokens.dart';
 import 'package:rogsheba_mobile/features/clinics/domain/clinic.dart';
 import 'package:rogsheba_mobile/features/clinics/presentation/clinics_controller.dart';
+import 'package:rogsheba_mobile/features/emergency/presentation/hotline_pill.dart';
 import 'package:rogsheba_mobile/shared/widgets/app_card.dart';
 
 /// The clinics screen, faithful to the web component: locating + loading
@@ -40,7 +41,10 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text(BnStrings.clinicsTitle)),
+      appBar: AppBar(
+        title: const Text(BnStrings.clinicsTitle),
+        actions: const [HotlinePill()],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),

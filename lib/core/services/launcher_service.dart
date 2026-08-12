@@ -35,6 +35,15 @@ abstract final class MapUrls {
   }
 }
 
+/// Pure URL construction for the `tel:` dialer. Kept next to [MapUrls] so
+/// every external URI the app launches is unit-testable without a real
+/// platform channel.
+abstract final class TelUrls {
+  /// `tel:` URI for the dialer. The number is taken verbatim — Arabic-to-
+  /// Bengali numeral conversion is the UI's job, not the URL builder's.
+  static Uri dial(String number) => Uri.parse('tel:$number');
+}
+
 /// Opens external apps (maps deep links here, `tel:` for emergency numbers).
 /// A function type keeps the seam injectable for tests without a launched
 /// platform channel: [launcherServiceProvider] is overridden with a closure

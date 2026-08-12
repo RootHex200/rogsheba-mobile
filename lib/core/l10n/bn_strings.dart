@@ -111,4 +111,19 @@ abstract final class BnStrings {
   // list at all and no location. Same retry as for any other failure.
   static const fallbackUnavailable =
       'ক্লিনিক তালিকা লোড করা যাচ্ছে না। সংযোগ ঠিক করে আবার চেষ্টা করুন।';
+
+  // ---- Emergency sheet (Issue #10) ----
+  /// Sheet header — the same wording the web shows above its hotline list.
+  static const emergencySheetTitle = 'জরুরি নম্বর';
+
+  /// Sheet sub-headline encouraging the user to tap to dial.
+  static const emergencySheetSubtitle =
+      'দ্রুত কল করতে যেকোনো নম্বরে ট্যাপ করুন';
+
+  /// Spinner state inside the sheet.
+  static const emergencyLoading = 'জরুরি নম্বর লোড হচ্ছে…';
+
+  /// API failure inside the sheet; retry pill sits below it.
+  static const emergencyLoadFailed =
+      'জরুরি নম্বর লোড করা যায়নি। আবার চেষ্টা করুন।';
 }
