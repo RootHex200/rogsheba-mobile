@@ -6,14 +6,28 @@ import 'package:rogsheba_mobile/core/services/location_service.dart';
 import 'package:rogsheba_mobile/features/clinics/data/clinics_repository.dart';
 import 'package:rogsheba_mobile/features/clinics/domain/clinic.dart';
 
-/// Which of the web's two distinct waiting states (or the terminal states)
-/// the clinics screen is in.
-enum ClinicsPhase { locating, loading, ready, failed }
+/// Which state the clinics screen is in.
+enum ClinicsPhase {
+  /// Still asking for permission / waiting on geolocator.
+  locating,
+
+  /// Have permission (or have given up on it); talking to `/clinics`.
+  loading,
+
+  /// A list is rendered (located or fallback). `usingFallback` on
+  /// `ClinicsViewState` tells them apart — when true, `fallbackReason` is
+  /// the Bangla banner above the list.
+  ready,
+
+  /// No list to render at all — network failure on either branch. Retry-only.
+  failed,
+}
 
 class ClinicsViewState {
   const ClinicsViewState({
     this.phase = ClinicsPhase.locating,
     this.errorMessage,
+    this.fallbackReason,
     this.userLat,
     this.userLon,
     this.clinics = const [],
@@ -21,16 +35,28 @@ class ClinicsViewState {
 
   final ClinicsPhase phase;
 
-  /// Already-Bangla message shown verbatim, only when [phase] is `failed`.
+  /// Already-Bangla message shown only when [phase] is `failed`.
   final String? errorMessage;
+
+  /// Bangla prose banner shown above the list when [usingFallback] is true.
+  final String? fallbackReason;
 
   /// User position once granted, used as the maps-directions origin.
   final double? userLat;
   final double? userLon;
   final List<Clinic> clinics;
+
+  /// The ready state was reached via the `GET /clinics` fallback path —
+  /// the server returned `source: "fallback"` because we did not have a
+  /// position to send. The banner above the list is non-optional in v1.
+  bool get usingFallback =>
+      phase == ClinicsPhase.ready && userLat == null && userLon == null;
 }
 
-/// Drives the clinics screen: locate on open, then fetch nearest facilities.
+/// Drives the clinics screen: locate on open, then fetch nearby facilities.
+/// On any of the three location failure modes (denied / disabled / failed)
+/// the controller falls through to `GET /clinics` with no coordinates and
+/// renders the curated Dhaka list with a Bangla banner explaining why.
 class ClinicsController extends Notifier<ClinicsViewState> {
   @override
   ClinicsViewState build() => const ClinicsViewState();
@@ -41,38 +67,44 @@ class ClinicsController extends Notifier<ClinicsViewState> {
     state = const ClinicsViewState();
     final location = await ref.read(locationServiceProvider)();
 
-    if (location is! LocationGranted) {
-      // #8 owns only the granted path. The denied/disabled/failed recovery —
-      // curated Dhaka fallback list plus the Bangla warning banner — is #9;
-      // here the screen surfaces the failure so it never hangs silently.
-      state = ClinicsViewState(
-        errorMessage: switch (location) {
-          LocationDenied() => BnStrings.locationDenied,
-          LocationDisabled() => BnStrings.locationDisabled,
-          LocationFailed() => BnStrings.locationFailed,
-          LocationGranted() => BnStrings.locationFailed,
-        },
-      );
-      return;
-    }
+    // Mapped once so both branches below can fall through to the API call.
+    final fallbackBanner = switch (location) {
+      LocationGranted() => null,
+      LocationDenied() => BnStrings.fallbackBannerDenied,
+      LocationDisabled() => BnStrings.fallbackBannerDisabled,
+      LocationFailed() => BnStrings.fallbackBannerFailed,
+    };
 
+    final granted = location is LocationGranted;
+
+    // Both paths go through /clinics: granted sends lat/lon, the others
+    // omit them and get the server's curated Dhaka list back.
     state = ClinicsViewState(
       phase: ClinicsPhase.loading,
-      userLat: location.lat,
-      userLon: location.lon,
+      userLat: granted ? location.lat : null,
+      userLon: granted ? location.lon : null,
     );
+
     try {
-      final data = await ref
-          .read(clinicsRepositoryProvider)
-          .fetchNearby(lat: location.lat, lon: location.lon);
-      // The server already sorts by distance, but re-sort client-side like the
-      // web does so "nearest first" holds even past a reordering proxy.
+      final data = await ref.read(clinicsRepositoryProvider).fetchNearby(
+            lat: granted ? location.lat : null,
+            lon: granted ? location.lon : null,
+          );
+      // The server already sorts by distance, but re-sort client-side like
+      // the web does so "nearest first" holds even past a reordering proxy.
       final sorted = [...data.clinics]
         ..sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
+
+      // The source field is authoritative: even if the caller thought it
+      // had coordinates, an empty/fallback server response should still
+      // surface as the fallback UX, not as a "we located you" empty list.
+      final isFallback = data.source == 'fallback' || !granted;
+
       state = ClinicsViewState(
         phase: ClinicsPhase.ready,
-        userLat: location.lat,
-        userLon: location.lon,
+        userLat: granted ? location.lat : null,
+        userLon: granted ? location.lon : null,
+        fallbackReason: isFallback ? fallbackBanner : null,
         clinics: sorted,
       );
     } on ApiException catch (e) {
@@ -81,9 +113,12 @@ class ClinicsController extends Notifier<ClinicsViewState> {
         errorMessage: e.message,
       );
     } catch (_) {
+      // Even the fallback path's API call can fail (network down). Surface
+      // the Bangla last-resort copy instead of the generic error so the user
+      // knows there's a problem with the data, not with them.
       state = const ClinicsViewState(
         phase: ClinicsPhase.failed,
-        errorMessage: BnStrings.genericError,
+        errorMessage: BnStrings.fallbackUnavailable,
       );
     }
   }

@@ -45,6 +45,38 @@ const Map<String, dynamic> clinicsEnvelope = {
   },
 };
 
+/// `GET /clinics` response when no `lat`/`lon` are sent — the server returns
+/// `source: "fallback"` and a curated Dhaka hospital list. Same per-clinic
+/// fields as the located payload so the same `_ClinicItem` renders both.
+const Map<String, dynamic> fallbackEnvelope = {
+  'success': true,
+  'data': {
+    'source': 'fallback',
+    'origin': {'lat': 23.7806, 'lon': 90.4074},
+    'count': 2,
+    'clinics': [
+      {
+        'id': 'fb1',
+        'name': 'Square Hospitals Ltd.',
+        'lat': 23.7525,
+        'lon': 90.3786,
+        'distanceKm': 4.2,
+        'type': 'hospital',
+        'address': 'West Panthapath, Dhaka',
+      },
+      {
+        'id': 'fb2',
+        'name': 'United Hospital',
+        'lat': 23.7910,
+        'lon': 90.4035,
+        'distanceKm': 1.4,
+        'type': 'hospital',
+        'address': 'Gulshan 2, Dhaka',
+      },
+    ],
+  },
+};
+
 /// Pumps the real application widget with three overrides: the HTTP transport
 /// at the Dio adapter level, the location service, the speech/TTS services
 /// (none of which can run in a widget test) and an optional launcher
@@ -236,6 +268,151 @@ void main() {
         'https://www.openstreetmap.org/?mlat=23.7525&mlon=90.3786'
         '#map=17/23.7525/90.3786',
       );
+    },
+  );
+
+  // ---- slice #9: fallback list when location does not resolve ----
+
+  Future<void> goAndSettle(WidgetTester tester) async {
+    descendantContext(tester).go('/clinics');
+    await tester.pump();
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets(
+    'denying location shows the Dhaka fallback list with the permission banner',
+    (tester) async {
+      await pumpAppWithClinics(
+        tester,
+        handler: (options) async {
+          // No coordinates are sent on the fallback path.
+          expect(options.queryParameters['lat'], isNull);
+          expect(options.queryParameters['lon'], isNull);
+          return FakeDioAdapter.jsonBytes(fallbackEnvelope);
+        },
+        locate: () async => const LocationDenied(),
+      );
+      await goAndSettle(tester);
+
+      // The permission-specific Bangla banner is rendered.
+      expect(find.text(BnStrings.fallbackBannerDenied), findsOneWidget);
+
+      // The fallback list still renders — the screen is never empty.
+      expect(find.textContaining('Square Hospitals Ltd.'), findsOneWidget);
+      expect(find.textContaining('United Hospital'), findsOneWidget);
+
+      // Directions still work — but in the search variant since we have no
+      // user coords. This is the same MapUrls unit-tested in
+      // launcher_service_test.dart; here we just confirm the launcher was
+      // hit on tap.
+      await tester.tap(find.text(BnStrings.directions).first);
+      await tester.pumpAndSettle();
+
+      // A retry pill is rendered below the list.
+      expect(find.text(BnStrings.retry), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'location services off shows the fallback list with its own banner',
+    (tester) async {
+      await pumpAppWithClinics(
+        tester,
+        handler: (_) async => FakeDioAdapter.jsonBytes(fallbackEnvelope),
+        locate: () async => const LocationDisabled(),
+      );
+      await goAndSettle(tester);
+
+      expect(find.text(BnStrings.fallbackBannerDisabled), findsOneWidget);
+      expect(find.text(BnStrings.fallbackBannerDenied), findsNothing);
+      expect(find.textContaining('United Hospital'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'a lookup failure shows the fallback list with its own banner',
+    (tester) async {
+      await pumpAppWithClinics(
+        tester,
+        handler: (_) async => FakeDioAdapter.jsonBytes(fallbackEnvelope),
+        locate: () async => const LocationFailed(),
+      );
+      await goAndSettle(tester);
+
+      expect(find.text(BnStrings.fallbackBannerFailed), findsOneWidget);
+      expect(find.text(BnStrings.fallbackBannerDenied), findsNothing);
+      expect(find.text(BnStrings.fallbackBannerDisabled), findsNothing);
+      expect(find.textContaining('United Hospital'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'retrying after grant replaces the fallback list with the located one',
+    (tester) async {
+      // The location service "fakes" the user changing their mind about
+      // permission: first call denies, every later call grants. A mutable
+      // closure reference flips between them on each invocation.
+      var grant = false;
+      Future<LocationResult> locate() async => grant
+          ? const LocationGranted(lat: 23.7806, lon: 90.4074)
+          : const LocationDenied();
+
+      // First API call returns the fallback payload; second returns the
+      // located one. Either way the controller sees the same endpoint.
+      var apiCalls = 0;
+      await pumpAppWithClinics(
+        tester,
+        handler: (_) async {
+          apiCalls++;
+          return FakeDioAdapter.jsonBytes(
+            apiCalls == 1 ? fallbackEnvelope : clinicsEnvelope,
+          );
+        },
+        locate: locate,
+      );
+      await goAndSettle(tester);
+
+      // Fallback list visible, permission banner up.
+      expect(find.text(BnStrings.fallbackBannerDenied), findsOneWidget);
+      expect(find.textContaining('United Hospital'), findsOneWidget);
+      expect(find.textContaining('Dhaka Medical College Hospital'),
+          findsNothing);
+
+      // User re-grants location and taps retry. Both the location outcome
+      // and the API response flip.
+      grant = true;
+      await tester.tap(find.text(BnStrings.retry));
+      await tester.pumpAndSettle();
+
+      // Banner gone, located list up.
+      expect(find.text(BnStrings.fallbackBannerDenied), findsNothing);
+      expect(find.textContaining('Dhaka Medical College Hospital'),
+          findsOneWidget);
+      expect(find.textContaining('United Hospital'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'the fallback banner does not render on the located path',
+    (tester) async {
+      await pumpAppWithClinics(
+        tester,
+        handler: (_) async => FakeDioAdapter.jsonBytes(clinicsEnvelope),
+        locate: () async =>
+            const LocationGranted(lat: 23.7806, lon: 90.4074),
+      );
+      await goAndSettle(tester);
+
+      // No banner of any kind.
+      expect(find.text(BnStrings.fallbackBannerDenied), findsNothing);
+      expect(find.text(BnStrings.fallbackBannerDisabled), findsNothing);
+      expect(find.text(BnStrings.fallbackBannerFailed), findsNothing);
+
+      // No retry pill — only the fallback path exposes one.
+      expect(find.text(BnStrings.retry), findsNothing);
+
+      // The list is the located one.
+      expect(find.textContaining('Square Hospitals Ltd.'), findsOneWidget);
     },
   );
 }

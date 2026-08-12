@@ -92,9 +92,23 @@ abstract final class BnStrings {
   static const viewOnMap = 'ম্যাপে দেখুন';
   static const retry = 'আবার চেষ্টা করুন';
 
-  // Bare failure states for slice #8; #9 replaces them with the Dhaka
-  // fallback list plus the warning banner (matching the web).
+  // Bare failure states used by the retry-card inline message.
   static const locationDenied = 'লোকেশন অনুমতি দেওয়া হয়নি।';
   static const locationDisabled = 'লোকেশন সেবা বন্ধ আছে।';
   static const locationFailed = 'লোকেশন পাওয়া যায়নি।';
+
+  // Prose banners rendered above the Dhaka fallback list when location is
+  // unavailable — copied verbatim from the web component. The denied and
+  // service-down variants differ because the user-facing action differs.
+  static const fallbackBannerDenied =
+      'লোকেশন অনুমতি দেওয়া হয়নি — ঢাকার বড় হাসপাতালগুলো দেখাচ্ছি।';
+  static const fallbackBannerDisabled =
+      'লোকেশন সেবা বন্ধ আছে — ঢাকার বড় হাসপাতালগুলো দেখাচ্ছি।';
+  static const fallbackBannerFailed =
+      'লোকেশন পাওয়া যায়নি — ঢাকার বড় হাসপাতালগুলো দেখাচ্ছি।';
+
+  // Last-resort message when even the fallback API call fails — we have no
+  // list at all and no location. Same retry as for any other failure.
+  static const fallbackUnavailable =
+      'ক্লিনিক তালিকা লোড করা যাচ্ছে না। সংযোগ ঠিক করে আবার চেষ্টা করুন।';
 }
