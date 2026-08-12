@@ -7,13 +7,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rogsheba_mobile/app.dart';
 import 'package:rogsheba_mobile/core/l10n/bn_strings.dart';
 import 'package:rogsheba_mobile/core/network/network_providers.dart';
+import 'package:rogsheba_mobile/core/services/speech_service.dart';
+import 'package:rogsheba_mobile/core/services/tts_service.dart';
 
 import '../../helpers/fake_dio_adapter.dart';
+import '../../helpers/fake_speech_service.dart';
+import '../../helpers/fake_tts_service.dart';
 import '../../helpers/fixtures.dart';
 
-/// Pumps the real application widget with exactly one override: the HTTP
-/// transport at the Dio adapter level. Everything above it — UTF-8 handling,
-/// envelope decoding, error mapping, the repository and the screen — is real.
+/// Pumps the real application widget with three overrides: the HTTP transport
+/// at the Dio adapter level, the speech engine and the TTS engine (all of which
+/// cross platform channels that cannot run in a widget test). Everything above
+/// them — UTF-8 handling, envelope decoding, error mapping, the repository, the
+/// screen, the mic and the speaker button — is real.
 Future<FakeDioAdapter> pumpAppWithTransport(
   WidgetTester tester,
   Future<ResponseBody> Function(RequestOptions) handler,
@@ -23,6 +29,8 @@ Future<FakeDioAdapter> pumpAppWithTransport(
     ProviderScope(
       overrides: [
         dioProvider.overrideWith((ref) => Dio()..httpClientAdapter = adapter),
+        ttsServiceProvider.overrideWithValue(FakeTtsService()),
+        speechServiceProvider.overrideWithValue(FakeSpeechService()),
       ],
       child: const RogShebaApp(),
     ),
@@ -31,6 +39,19 @@ Future<FakeDioAdapter> pumpAppWithTransport(
 }
 
 void main() {
+  testWidgets('app bar shows the RogSheba lockup and the ৯৯৯ hotline pill', (
+    tester,
+  ) async {
+    await pumpAppWithTransport(
+      tester,
+      (_) async => FakeDioAdapter.jsonBytes(triageEnvelope),
+    );
+
+    expect(find.text('${BnStrings.appBrand} ${BnStrings.appTitle}'), findsOne);
+    expect(find.text(BnStrings.hotline999), findsOneWidget);
+    expect(find.text(BnStrings.heroBadge), findsOneWidget);
+  });
+
   testWidgets('tapping an example chip fills the field and enables submit', (
     tester,
   ) async {
@@ -90,6 +111,10 @@ void main() {
 
       expect(find.text(BnStrings.submitting), findsOneWidget);
 
+      // Both the example chips and the feature strip hide while in-flight.
+      expect(find.text(BnStrings.exampleHeader), findsNothing);
+      expect(find.text(BnStrings.featureTriageTitle), findsNothing);
+
       // A second submission attempt must be ignored.
       await tester.tap(find.byType(FilledButton));
       await tester.pump();
@@ -130,6 +155,11 @@ void main() {
         find.textContaining('এটি একজন ডাক্তারের পরামর্শের বিকল্প নয়।'),
         findsOneWidget,
       );
+
+      // Once a result is shown, the on-boarding aids (chips + feature strip)
+      // are hidden — nothing to distract from the outcome.
+      expect(find.text(BnStrings.exampleHeader), findsNothing);
+      expect(find.text(BnStrings.featureTriageTitle), findsNothing);
     },
   );
 
@@ -148,6 +178,59 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Invalid request body.'), findsOneWidget);
+    expect(find.text('গলা ব্যথা ও জ্বর'), findsNothing);
+  });
+
+  testWidgets('submitting scrolls the freshly produced result into view', (
+    tester,
+  ) async {
+    // Narrow the viewport so the result card starts below the fold, forcing
+    // the auto-scroll to do real work.
+    tester.view.physicalSize = const Size(500, 600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await pumpAppWithTransport(
+      tester,
+      (_) async => FakeDioAdapter.jsonBytes(triageEnvelope),
+    );
+
+    final resultTitle = find.text('গলা ব্যথা ও জ্বর');
+    // Assert no result exists yet (and by extension is below the fold).
+    expect(resultTitle, findsNothing);
+
+    await tester.enterText(find.byType(TextField), 'গলা ব্যথা আর জ্বর');
+    await tester.pump();
+
+    final submitButton = find.widgetWithText(FilledButton, BnStrings.submit);
+    await tester.ensureVisible(submitButton);
+    await tester.pumpAndSettle();
+    await tester.tap(submitButton);
+    await tester.pumpAndSettle();
+
+    expect(resultTitle, findsOneWidget);
+    final titleRect = tester.getRect(resultTitle);
+    expect(titleRect.top, greaterThan(0));
+    expect(titleRect.bottom, lessThan(tester.view.physicalSize.height));
+  });
+
+  testWidgets('a failing request renders the Bangla error banner verbatim', (
+    tester,
+  ) async {
+    await pumpAppWithTransport(
+      tester,
+      (_) async => FakeDioAdapter.jsonBytes(banglaErrorEnvelope, status: 422),
+    );
+
+    await tester.enterText(find.byType(TextField), 'জ্বর');
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, BnStrings.submit));
+    await tester.pumpAndSettle();
+
+    expect(find.text('অন্তত ৩টি অক্ষর লিখুন।'), findsOneWidget);
     expect(find.text('গলা ব্যথা ও জ্বর'), findsNothing);
   });
 }

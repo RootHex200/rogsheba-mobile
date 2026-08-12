@@ -6,7 +6,14 @@
 abstract final class BnStrings {
   static const appTitle = 'রোগসেবা';
 
+  /// Latin brand word, rendered in the display font next to the Bangla title.
+  static const appBrand = 'RogSheba';
+
+  /// Emergency number pill in the app bar (web header `[৯৯৯](tel:999)`).
+  static const hotline999 = '৯৯৯';
+
   // ---- Home hero ----
+  static const heroBadge = 'AI ট্রায়াজ • বাংলা ভয়েস • বিনামূল্যে';
   static const heroTitle = 'আপনার লক্ষণ বলুন — তাৎক্ষণিক স্বাস্থ্য পরামর্শ পান';
   static const heroSubtitle =
       'বাংলায় কথা বলে বা লিখে জানান কী হচ্ছে। RogSheba বলে দেবে — '
@@ -22,6 +29,14 @@ abstract final class BnStrings {
   static const submit = 'পরামর্শ নিন';
   static const submitting = 'বিশ্লেষণ চলছে';
   static const inlineDisclaimer = 'এটি ডাক্তারের পরামর্শের বিকল্প নয়।';
+
+  // ---- Voice input ----
+  /// Live indicator shown while the mic is active (web's "শুনছি…").
+  static const listeningIndicator = 'শুনছি…';
+  static const stopListening = 'শোনা বন্ধ করুন';
+  static const voiceUnavailable =
+      'ভয়েস সাপোর্ট নেই — টাইপ করুন';
+  static const micLabel = 'বাংলায় বলুন';
 
   // ---- Examples ----
   static const exampleHeader = 'উদাহরণ';
@@ -42,6 +57,8 @@ abstract final class BnStrings {
   static const genericError = 'একটি ত্রুটি ঘটেছে।';
   static const networkError =
       'ইন্টারনেট সংযোগ নেই। সংযোগ ঠিক করে আবার চেষ্টা করুন।';
+  static const timeoutError =
+      'অনুরোধটি সময় শেষ হয়ে গেছে। সংযোগ ঠিক করে আবার চেষ্টা করুন।';
 
   // ---- Triage result card headings ----
   static const levelGreen = 'সবুজ — ঘরে যত্ন';
@@ -59,6 +76,11 @@ abstract final class BnStrings {
   static const followupPrefix = 'ফলো-আপ: ';
   static const ttsListen = 'বাংলায় শুনুন';
   static const ttsStop = 'শোনা বন্ধ';
+
+  // Spoken-text prefixes, read aloud in the web's order.
+  static const ttsAdvicePrefix = 'করণীয়: ';
+  static const ttsWarningSignsPrefix = 'বিপদ-সংকেত: ';
+  static const redBanner = 'এখনই হাসপাতালে যান বা জরুরি সেবায় কল করুন';
   static const call999 = '৯৯৯ কল';
   static const call16263 = '১৬২৬৩';
   static const nearbyClinicsCta = 'নিকটস্থ ক্লিনিক খুঁজুন';

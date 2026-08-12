@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:rogsheba_mobile/core/config/app_config.dart';
 import 'package:rogsheba_mobile/core/l10n/bn_strings.dart';
 import 'package:rogsheba_mobile/core/network/api_exception.dart';
+import 'package:rogsheba_mobile/core/network/dio_error_mapper.dart';
 
 /// Thin, envelope-aware wrapper around Dio.
 ///
@@ -41,7 +42,7 @@ class ApiClient {
       );
       return _decode(response.data, effectiveTimeout);
     } on DioException catch (e) {
-      throw _mapDioException(e);
+      throw mapDioError(e);
     }
   }
 
@@ -56,32 +57,5 @@ class ApiClient {
       throw const ApiException('bad_encoding', BnStrings.genericError);
     }
     return jsonDecode(decoded) as Map<String, dynamic>;
-  }
-
-  ApiException _mapDioException(DioException e) {
-    final responseBody = e.response?.data;
-    if (responseBody is Uint8List) {
-      try {
-        final envelope =
-            jsonDecode(utf8.decode(responseBody)) as Map<String, dynamic>;
-        if (envelope['success'] == false) {
-          final error = envelope['error'];
-          if (error is Map<String, dynamic>) {
-            return ApiException(
-              (error['code'] as String?) ?? 'unknown_error',
-              (error['message'] as String?) ?? BnStrings.genericError,
-              statusCode: e.response?.statusCode,
-            );
-          }
-        }
-      } on FormatException {
-        // Fall through to the generic mapping below.
-      }
-    }
-    return ApiException(
-      'network_error',
-      BnStrings.networkError,
-      statusCode: e.response?.statusCode,
-    );
   }
 }
