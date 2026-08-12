@@ -64,10 +64,29 @@ class _ClinicsScreenState extends ConsumerState<ClinicsScreen> {
                     ClinicsPhase.loading => const _WaitingCard(
                       message: BnStrings.clinicsLoading,
                     ),
-                    ClinicsPhase.ready => _ClinicList(
-                      clinics: state.clinics,
-                      userLat: state.userLat,
-                      userLon: state.userLon,
+                    ClinicsPhase.ready => Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (state.usingFallback)
+                          _FallbackBanner(message: state.fallbackReason!),
+                        _ClinicList(
+                          clinics: state.clinics,
+                          userLat: state.userLat,
+                          userLon: state.userLon,
+                        ),
+                        if (state.usingFallback) ...[
+                          const SizedBox(height: 16),
+                          Center(
+                            child: _PillButton(
+                              label: BnStrings.retry,
+                              filled: false,
+                              onPressed: () => ref
+                                  .read(clinicsControllerProvider.notifier)
+                                  .locateAndLoad(),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     ClinicsPhase.failed => _FailedCard(
                       message: state.errorMessage ?? BnStrings.genericError,
@@ -113,6 +132,53 @@ class _WaitingCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Amber info banner shown above the fallback list when location did not
+/// resolve. The Bangla copy lives in [BnStrings] and is rendered verbatim.
+/// Matches the web's tone: explain why we fell back, not just that we did.
+class _FallbackBanner extends StatelessWidget {
+  const _FallbackBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: scheme.tertiaryContainer.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: scheme.tertiary.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.info_outline,
+              color: scheme.tertiary,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurface,
+                ),
               ),
             ),
           ],
