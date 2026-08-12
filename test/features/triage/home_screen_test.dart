@@ -152,7 +152,7 @@ void main() {
       expect(find.textContaining('প্রচুর কুসুম গরম পানি'), findsOneWidget);
       expect(find.textContaining('শ্বাস নিতে কষ্ট হলে'), findsOneWidget);
       expect(
-        find.textContaining('এটি একজন ডাক্তারের পরামর্শের বিকল্প নয়।'),
+        find.text('এটি একজন ডাক্তারের পরামর্শের বিকল্প নয়।'),
         findsOneWidget,
       );
 

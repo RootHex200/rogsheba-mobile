@@ -17,7 +17,7 @@ import 'package:rogsheba_mobile/shared/widgets/app_card.dart';
 import 'package:rogsheba_mobile/shared/widgets/app_chip.dart';
 
 /// The home / triage screen, porting the web layout: hero, symptom entry card,
-/// example chips, feature strip and the [TriageResultCard]. All colours and
+/// example chips, feature strip and the triage result card. All colours and
 /// geometry resolve through the theme — no hardcoded tokens in feature code.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
