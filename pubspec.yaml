@@ -1,7 +1,7 @@
 name: rogsheba_mobile
 description: "Bangla voice-first AI health triage for Bangladesh — Flutter port of the RogSheba web app."
 publish_to: 'none'
-version: 0.1.0+1
+version: 1.0.0+1
 
 environment:
   sdk: ^3.12.2
@@ -15,7 +15,9 @@ dependencies:
   flutter_tts: ^4.2.5
   geolocator: ^14.0.3
   go_router: ^17.5.0
+  permission_handler: ^13.0.1
   shared_preferences: ^2.5.5
+  shimmer: ^4.0.0
   speech_to_text: ^7.4.0
   url_launcher: ^6.3.2
 

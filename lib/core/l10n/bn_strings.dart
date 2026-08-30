@@ -74,6 +74,25 @@ abstract final class BnStrings {
   static const ttsListen = 'বাংলায় শুনুন';
   static const ttsStop = 'শোনা বন্ধ';
 
+  // ---- Follow-up questions (multi-turn triage) ----
+  /// Heading above the answer thread once the AI asks its first question.
+  static const followUpTitle = 'আরও কিছু জানতে চাই';
+
+  /// Placeholder inside the follow-up answer field (mirrors the main field).
+  static const answerPlaceholder = 'আপনার উত্তর বাংলায় লিখুন বা বলুন…';
+
+  /// Send/transcribe affordance for the answer field, read aloud for TTS.
+  static const answerSend = 'উত্তর পাঠান';
+
+  /// Mic accessibility label for the answer field.
+  static const answerMicLabel = 'উत्तर বলুন';
+
+  /// Error shown when the follow-up answer request fails.
+  static const answerFailed = 'উত্তর পাঠানো যায়নি। আবার চেষ্টা করুন।';
+
+  /// Floating button to start a brand-new triage conversation.
+  static const newChatLabel = 'নতুন চ্যাট শুরু করুন';
+
   // Spoken-text prefixes, read aloud in the web's order.
   static const ttsAdvicePrefix = 'করণীয়: ';
   static const ttsWarningSignsPrefix = 'বিপদ-সংকেত: ';
@@ -138,4 +157,26 @@ abstract final class BnStrings {
   /// Screen-reader label for the emergency pill. The visible `৯৯৯` alone is
   /// cryptic when read aloud — say what it is and what it does.
   static const hotlinePillLabel = 'জরুরি নম্বর ৯৯৯ — খুলুন';
+
+  // ---- Permission rationale (Issue #13) ----
+  /// Shown once before the first microphone system prompt. Plain Bangla, in
+  /// the app's register, explaining what the mic does and what it does not do.
+  static const micRationaleTitle = 'মাইক্রোফোন ব্যবহার';
+  static const micRationaleBody =
+      'বাংলায় কথা বলে লক্ষণ লিখতে মাইক্রোফোন ব্যবহার হয়। '
+      'আপনার কথা কোথাও সংরক্ষণ করা হয় না — শুধু লেখায় রূপান্তরিত হয়।';
+  static const locationRationaleTitle = 'লোকেশন ব্যবহার';
+  static const locationRationaleBody =
+      'নিকটস্থ ক্লিনিক দেখাতে আপনার অবস্থান ব্যবহার হয়। '
+      'অবস্থান কোথাও সংরক্ষণ করা হয় না — শুধু এই খোঁজের জন্য।';
+  static const rationaleContinue = 'চালিয়ে যান';
+  static const rationaleCancel = 'পরে';
+
+  /// Settings-route affordance shown after a permission denial, so the user
+  /// who changed their mind can reach the OS settings screen.
+  static const openSettings = 'সেটিংসে যান';
+
+  /// Inline note under the symptom field when the mic permission was denied —
+  /// typing stays fully functional.
+  static const micPermissionDenied = 'মাইক্রোফোন অনুমতি নেই — টাইপ করে লিখুন।';
 }

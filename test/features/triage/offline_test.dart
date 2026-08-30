@@ -9,6 +9,7 @@ import 'package:rogsheba_mobile/core/l10n/bn_strings.dart';
 import 'package:rogsheba_mobile/core/network/network_providers.dart';
 import 'package:rogsheba_mobile/core/services/cache_service.dart';
 import 'package:rogsheba_mobile/core/services/connectivity_service.dart';
+import 'package:rogsheba_mobile/core/services/permission_service.dart';
 import 'package:rogsheba_mobile/core/services/speech_service.dart';
 import 'package:rogsheba_mobile/core/services/tts_service.dart';
 import 'package:rogsheba_mobile/features/triage/domain/triage_level.dart';
@@ -17,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/fake_connectivity_service.dart';
 import '../../helpers/fake_dio_adapter.dart';
+import '../../helpers/fake_permission_service.dart';
 import '../../helpers/fake_speech_service.dart';
 import '../../helpers/fake_tts_service.dart';
 import '../../helpers/fixtures.dart';
@@ -53,6 +55,9 @@ void main() {
           dioProvider.overrideWith((ref) => Dio()..httpClientAdapter = adapter),
           ttsServiceProvider.overrideWithValue(FakeTtsService()),
           speechServiceProvider.overrideWithValue(FakeSpeechService()),
+          permissionServiceProvider.overrideWithValue(
+            FakePermissionService(),
+          ),
           connectivityServiceProvider.overrideWithValue(connectivity),
         ],
         child: const RogShebaApp(),
@@ -63,7 +68,7 @@ void main() {
   }
 
   testWidgets(
-    'a cached triage result renders read-only with no connectivity',
+    'cached result is not restored on cold start — always fresh home',
     (tester) async {
       final connectivity = FakeConnectivityService(online: false);
       final adapter = await pumpOfflineApp(
@@ -75,16 +80,11 @@ void main() {
         },
       );
 
-      // The cached result renders — nothing lost just because the connection
-      // dropped since the previous session.
-      expect(find.text('গলা ব্যথা ও জ্বর'), findsOneWidget);
-      expect(
-        find.text('আপনার লক্ষণ সম্ভবত গলার সংক্রমণ নির্দেশ করছে।'),
-        findsOneWidget,
-      );
+      // The cached result is NOT restored — the app always starts fresh.
+      expect(find.text('গলা ব্যথা ও জ্বর'), findsNothing);
 
-      // The offline banner explains why a new request will not work.
-      expect(find.text(BnStrings.offlineBanner), findsOneWidget);
+      // The initial home input is shown instead.
+      expect(find.byType(TextField), findsOneWidget);
 
       // Zero requests hit the wire for the whole pump.
       expect(adapter.requests, isEmpty);
